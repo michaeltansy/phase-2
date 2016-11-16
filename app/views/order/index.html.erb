@@ -1,0 +1,396 @@
+<div class="row">
+  <h1>Add Order</h1>
+</div>
+
+<div class="row">
+  <div class="form-group">
+    <!--<form>-->
+    <div class="col-md-2">
+      <!--<label for="sel1">Type:</label>-->
+      <select class="form-control" id="selectType">
+        <option value="0" disabled selected hidden>- Select Type -</option>
+        <% @typeList.each do |type| %>
+            <option value="<%= type.id %>"><%= type.name %></option>
+        <% end %>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <!--<label for="sel1">Item:</label>-->
+      <select class="form-control" id="selectItem">
+        <option value="0" disabled selected hidden>- Select Item -</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <!--<label for="sel1">Size:</label>-->
+      <select class="form-control" id="selectSize">
+        <option value="0" disabled selected hidden>- Select Size -</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <!--<label for="sel1">Size:</label>-->
+      <select class="form-control" id="selectStatus">
+        <option value="0" disabled selected hidden>- Select Status -</option>
+        <% @statusList.each do |status| %>
+            <option value="<%= status.id %>"><%= status.name %></option>
+        <% end %>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select class="form-control" id="selectQuantity">
+        <option value="0" disabled selected hidden>- Select Quantity -</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button class="btn btn-primary" id="addItem">Add Item</button>
+    </div>
+    <!--</form>-->
+  </div>
+</div>
+
+<div class="row">
+  <table class="table table-hover" id="orderTable">
+    <thead>
+    <tr>
+      <th>No.</th>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Size</th>
+      <th>Status</th>
+      <th>Quantity</th>
+      <th>Price (each)</th>
+      <th>Total Price</th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+</div>
+
+<div class="row">
+  <div class="col-md-2"><h2>Subtotal :</h2></div>
+  <div class="col-md-2"><h2><div id="priceTotal"></div></h2></div>
+</div>
+
+<div class="row">
+  <button class="btn btn-success" id="proceedOrder">Proceed Order</button>
+  <button class="btn btn-danger" id="resetOrder">Reset Order</button>
+</div>
+
+<div class="row">
+  <div class="form-group">
+    <h2>Order History</h2>
+  </div>
+
+  <div class="form-group">
+    <div class="col-md-2">
+      <select class="form-control" id="selectOrder">
+        <option value="All" selected>All</option>
+        <option value="Type">Type (Coffee or Tea)</option>
+        <option value="Size">Size</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select class="form-control" id="selectGroup">
+        <option value="0" disabled selected hidden>- Select -</option>
+      </select>
+    </div>
+  </div>
+
+  <table class="table table-hover" id="orderDataTable">
+    <thead>
+    <tr>
+      <th>Order Id</th>
+      <th>Type</th>
+      <th>Drink Name</th>
+      <th>Size</th>
+      <th>Status</th>
+      <th>Quantity</th>
+      <th>Total Price</th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function(){
+    $.ajaxSetup({
+      headers: {
+        'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+      }
+    });
+
+    $('#selectType').on('change',function(){
+      $('#selectItem').empty();
+      $('#selectSize').empty();
+      $('#selectSize').append('<option value="0" disabled selected hidden>- Select Item -</option>');
+      $.ajax({
+        type : 'POST',
+        url : '/order/addChange',
+        beforeSend: function(xhr) {xhr.setRequestHeader('X-CSRF-Token', $('meta[name="csrf-token"]').attr('content'))},
+        data : {
+          type : 10,
+          inputId : $(this).val()
+        },
+        success : function(data){
+          var d = data.file_content;
+//          console.log(d);
+          $('#selectItem').append('<option value="0" disabled selected hidden>- Select Item -</option>');
+          for(var i=1;i<=d.length;i++){
+            $('#selectItem').append('<option value="'+d[i-1]['id']+'">'+d[i-1]['name']+'</option>');
+          }
+        },
+        error : function(data){
+          console.log(data);
+        }
+      });
+    });
+    $('#selectItem').on('change',function(){
+      $('#selectSize').empty();
+      $.ajax({
+        type : 'POST',
+        url : '/order/addChange',
+        beforeSend: function(xhr) {xhr.setRequestHeader('X-CSRF-Token', $('meta[name="csrf-token"]').attr('content'))},
+        data : {
+          item : 10,
+          inputId : $(this).val()
+        },
+        success : function(data){
+          var d = data.file_content;
+          console.log(d);
+          $('#selectSize').append('<option value="0" disabled selected hidden>- Select Size -</option>');
+          for(var i=1;i<=d.length;i++){
+            $('#selectSize').append('<option value="'+d[i-1]['id']+'">'+d[i-1]['name']+'</option>');
+          }
+        },
+        error : function(data){
+          console.log(data);
+        }
+      });
+    });
+
+    var num = 0;
+    var totalOrderPrice = 0;
+    var dataArray = new Array();
+    var subTotal = 0;
+    var orderData;
+    $('#priceTotal').text('$'+totalOrderPrice);
+    $('#addItem').on('click',function(){
+      var selectedType = $('#selectType').val();
+      var selectedItem = $('#selectItem').val();
+      var selectedSize = $('#selectSize').val();
+      var selectedQuantity = $('#selectQuantity').val();
+      var selectedStatus = $('#selectStatus').val();
+
+      if(selectedType!=null && selectedItem!=null && selectedSize!=null && selectedQuantity!=null && selectedStatus!=null){
+
+        $.ajax({
+          type: 'POST',
+          url: '/order/addOrder',
+          beforeSend: function(xhr) {xhr.setRequestHeader('X-CSRF-Token', $('meta[name="csrf-token"]').attr('content'))},
+          data: {
+            type : selectedType,
+            item : selectedItem,
+            size : selectedSize,
+            qty : selectedQuantity,
+            status : selectedStatus
+          },
+          success: function(data){
+            $('#addItem').prop("disabled",true);
+//            console.log(dataArray);
+            var retrieved = data.file_content;
+            totalOrderPrice += retrieved.totalPrice;
+            $('#priceTotal').text('$'+totalOrderPrice);
+            dataArray.push(retrieved);
+            num+=1;
+            var temp = '<td>'+num+'</td><td>'+retrieved.drink.name+'</td><td>'+retrieved.type.name+'</td><td>'+retrieved.size.name+'</td><td>'+retrieved.status.name+'</td><td>'+retrieved.quantity+'</td><td>'+retrieved.priceEach+'</td><td>'+retrieved.totalPrice+'</td>';
+            $('#orderTable > tbody:last-child').append('<tr>'+temp+'</tr>');
+            $('#selectType').val("0");
+            $('#selectItem').val("0");
+            $('#selectSize').val("0");
+            $('#selectQuantity').val("0");
+            $('#selectStatus').val("0");
+            return false;
+          },
+          error : function(data){
+
+            return false;
+          }
+        });
+      }
+    });
+
+    $('#proceedOrder').on('click',function(){
+      $.ajax({
+        type: 'POST',
+        url: '/order/create',
+        beforeSend: function(xhr) {xhr.setRequestHeader('X-CSRF-Token', $('meta[name="csrf-token"]').attr('content'))},
+        data: {data: dataArray, subtotal: totalOrderPrice},
+        success: function(data){
+//          console.log(data);
+//          var status = $(this).val();
+          subTotal = 0;
+          $.get("/order/orderData", {  },
+              function(data){
+                $('#orderDataTable > tbody').empty();
+                $('#orderTable > tbody').empty();
+                $('#selectOrder').val('All');
+                $('#selectGroup').empty();
+                $('#selectGroup').append('<option value="0" disabled selected hidden>- Select -</option>');
+
+                var d = data.file_content;
+                for(var i=0;i<d.length;i++){
+                  subTotal+= d[i][2];
+                  var temp = '<td>'+d[i][0]+'</td><td>'+d[i][5]+'</td><td>'+d[i][3]+'</td><td>'+d[i][4]+'</td><td>'+
+                      d[i][6]+'</td><td>'+d[i][1]+'</td><td>'+d[i][2]+'</td>';
+//                  subTotal+= d[i]['price'];
+//                  var temp = '<td>'+d[i]['id']+'</td><td>'+d[i]['type_name']+'</td><td>'+d[i]['drink_name']+'</td><td>'+d[i]['size_name']+'</td><td>'+
+//                      d[i]['status']+'</td><td>'+d[i]['quantity']+'</td><td>'+d[i]['price']+'</td>';
+                  $('#orderDataTable > tbody:last-child').append('<tr>'+temp+'</tr>');
+                }
+                $('#orderDataTable > tbody:last-child').append('<tr><td>Total Sales :</td><td></td><td></td><td></td><td></td><td></td><td>$ '+subTotal+'</td></tr>');
+                poll(1000);
+              },'json'
+          );
+//          location.reload();
+          return false;
+        },
+        error: function (data) {
+          console.log(data);
+          return false;
+        }
+
+      });
+    });
+
+    $('#selectOrder').on('change',function(){
+      var point = $(this).val();
+      var data;
+      if(point=='All'){
+        data = {
+          data : 'all'
+        }
+      }else if(point=='Type'){
+        data = {
+          data : 'type'
+        }
+      }else if(point=='Size'){
+        data = {
+          data : 'size'
+        }
+      }
+
+      $.ajax({
+        type : 'GET',
+        url: '/order/groupData',
+        data : data,
+        success : function(data){
+          console.log(data);
+          $('#selectGroup').empty();
+          var d = data.file_content;
+          $('#selectGroup').append('<option value="0" disabled selected hidden>- Select Type -</option>');
+          if(d!=null){
+            for(var i=1;i<=d.length;i++){
+              $('#selectGroup').append('<option value="'+d[i-1]['name']+'">'+d[i-1]['name']+'</option>');
+            }
+          }else{
+            dataTableOrder();
+          }
+        },
+        error : function(data){
+          console.log(data);
+        }
+      });
+
+//      dataTableOrder();
+
+    });
+
+    $('#selectGroup').on('change',function(){
+      var data2 = $(this).val();
+      var temp = $('#selectOrder').val();
+      var data1;
+      if(temp=='Type') data1 = 'type.typename';
+      else if(temp=='Size') data1 = 'type.sizename';
+
+      $.ajax({
+        type: 'GET',
+        url: '/order/orderData',
+        data : {
+          data1 : data1,
+          data2 : data2
+        },
+        success: function(data){
+          subTotal = 0;
+          $('#orderDataTable > tbody').empty();
+          var d = data.file_content;
+          for(var i=0;i<d.length;i++){
+            var num = i+1;
+            subTotal+= d[i][2];
+            var temp = '<td>'+d[i][0]+'</td><td>'+d[i][5]+'</td><td>'+d[i][3]+'</td><td>'+d[i][4]+'</td><td>'+
+                d[i][6]+'</td><td>'+d[i][1]+'</td><td>'+d[i][2]+'</td>';
+//            subTotal+= d[i]['price'];
+//            var temp = '<td>'+d[i]['id']+'</td><td>'+d[i]['type_name']+'</td><td>'+d[i]['drink_name']+'</td><td>'+d[i]['size_name']+'</td><td>'+
+//                d[i]['status']+'</td><td>'+d[i]['quantity']+'</td><td>'+d[i]['price']+'</td>';
+            $('#orderDataTable > tbody:last-child').append('<tr>'+temp+'</tr>');
+          }
+          $('#orderDataTable > tbody:last-child').append('<tr><td>Total Sales :</td><td></td><td></td><td></td><td></td><td></td><td>$ '+subTotal+'</td></tr>');
+
+        },
+        error: function(data){
+          console.log(data);
+        }
+      });
+    });
+
+    $('#totalP').val(20);
+
+    function dataTableOrder(){
+      subTotal = 0;
+      $.ajax({
+        url: '/order/orderData',
+        success : function(data){
+          $('#orderDataTable > tbody').empty();
+          var d = data.file_content;
+          for(var i=0;i<d.length;i++){
+            var num = i+1;
+            subTotal+= d[i][2];
+            var temp = '<td>'+d[i][0]+'</td><td>'+d[i][5]+'</td><td>'+d[i][3]+'</td><td>'+d[i][4]+'</td><td>'+
+                d[i][6]+'</td><td>'+d[i][1]+'</td><td>'+d[i][2]+'</td>';
+//            subTotal+= d[i]['price'];
+//            var temp = '<td>'+d[i]['id']+'</td><td>'+d[i]['type_name']+'</td><td>'+d[i]['drink_name']+'</td><td>'+d[i]['size_name']+'</td><td>'+
+//                d[i]['status']+'</td><td>'+d[i]['quantity']+'</td><td>'+d[i]['price']+'</td>';
+            $('#orderDataTable > tbody:last-child').append('<tr>'+temp+'</tr>');
+          }
+          $('#orderDataTable > tbody:last-child').append('<tr><td>Total Sales :</td><td></td><td></td><td></td><td></td><td></td><td>$ '+subTotal+'</td></tr>');
+        }
+      });
+    };
+
+    dataTableOrder();
+
+    $('#resetOrder').on('click',function(){
+      if(dataArray!=null){
+        $('#addItem').prop("disabled",false);
+        $('#orderTable > tbody').empty();
+        dataArray.splice(0,0);
+        totalOrderPrice = 0;
+        $('#priceTotal').text('$'+totalOrderPrice);
+      }else{
+        alert("you have not order anything yet");
+      }
+    });
+  });
+</script>
