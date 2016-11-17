@@ -1,24 +1,17 @@
-# README
+## Synopsis
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+There 3 features in this application :
+- Order : this feature displays the order list and also a user can add new order.
+- Menu : this feature displays all the menu list and also a user can add new menu.
+- Size : this feature displays all size list existed and also a user can add new size.
 
-Things you may want to cover:
+## Installation
+# Database configuration
+- sql dump of the application is provided in the github (wego_db.sql)
+- to adjust the database configuration, you can go to /config/database.yml
 
-* Ruby version
+## Heroku App
+https://phase-2-aloysius.herokuapp.com
 
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+## Ruby version
+ruby 2.3.1p112
