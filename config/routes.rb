@@ -17,7 +17,7 @@ Rails.application.routes.draw do
   post 'order/addChange'
   get 'welcome/index'
 
-  root 'welcome#index'
+  root 'order#index'
 
   resources :scripts do
     member do
